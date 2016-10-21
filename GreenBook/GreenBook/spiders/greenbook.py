@@ -1,8 +1,7 @@
 # -*- coding: utf-8 -*-
-import scrapy
-from scrapy.linkextractors.sgml import SgmlLinkExtractor
-from scrapy.spiders import CrawlSpider, Rule
+from scrapy.spiders import CrawlSpider
 from scrapy.http import Request
+from items import GreenBookItem
 
 
 class GreenbookSpider(CrawlSpider):
@@ -12,33 +11,39 @@ class GreenbookSpider(CrawlSpider):
         'http://www.thegreenbook.com/',
     )
 
-    rules = (
-        Rule(SgmlLinkExtractor(allow=r'http://www.thegreenbook.com/products/search'),callback='parse2'),
-        Rule(SgmlLinkExtractor(allow=r'http://www.thegreenbook.com/products/[^/]+/$'), callback='parse_item'),
-    )
+    #rules = (
+        #Rule(LinkExtractor(allow=r'http://www.thegreenbook.com/products/search'),callback='parse2'),
+     #   Rule(LinkExtractor(allow=r'http://www.thegreenbook.com/products/[a-zA-Z-]+/$'), callback='parse_item'),
+    #)
 
+#TODO:
+#1.用代理访问
+#2。获取各项信息
+#3。修改代码关系
+#4。获取下一页
     def parse_item(self, response):
-        # i = GreenBookItem()
+        i = GreenBookItem()
         # url=response.url
-        # i['name'] = response.xpath('//h1/text()').extract()[0]
+        companys = response.css('div.companyInformation')
+        for c in companys:
+            i['name'] = c.css('a[itemprop="CompanyName"]::text').extract_first().strip()
         # i['address']=response.xpath('//div[@class="lai"]/text()').extract()[0].split()[4]
         # i['tel']=response.xpath('//div[@class="lai"]/text()').extract()[0].split()[3]
         # i['mail']=u''.join(response.xpath('//div[@id="articleContent"]/descendant::text()').extract())
         # i['website']=''
         
         self.logger.info('I am here!!!!!!!!!!!!!!')
-        return {'count':1}
+        return i
         
-    def parse_start_urls(self, response):
+    def parse(self,response):
         #hxs = HtmlXPathSelector(response)
 
         #items = []
-        import pdb
         urls = response.xpath('//@href').re(r'.*/products/search/.*')
         # pdb.set_trace()
         for url in urls:
             self.logger.info('search:'+url)
-            yield Request(url,headers={'User-Agent': "Mozilla/4.0 (compatible; MSIE 8.0; Windows NT 6.0; Trident/4.0)"})
+            yield Request(url,callback=self.parse2)#headers={'User-Agent': "Mozilla/4.0 (compatible; MSIE 8.0; Windows NT 6.0; Trident/4.0)"},
         
     def parse2(self, response):
         #hxs = HtmlXPathSelector(response)
@@ -49,4 +54,4 @@ class GreenbookSpider(CrawlSpider):
         # pdb.set_trace()
         for url in urls:
             self.logger.info('joinurl:'+url)
-            yield Request('http://www.thegreenbook.com'+url,headers={'User-Agent': "Mozilla/4.0 (compatible; MSIE 8.0; Windows NT 6.0; Trident/4.0)"})
+            yield Request('http://www.thegreenbook.com'+url,callback=self.parse_item)#,headers={'User-Agent': "Mozilla/4.0 (compatible; MSIE 8.0; Windows NT 6.0; Trident/4.0)"}
