@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from scrapy.spiders import CrawlSpider
 from scrapy.http import Request
-from items import GreenBookItem
+from GreenBook.items import GreenBookItem
 
 
 class GreenbookSpider(CrawlSpider):
@@ -22,18 +22,23 @@ class GreenbookSpider(CrawlSpider):
 #3。修改代码关系
 #4。获取下一页
     def parse_item(self, response):
-        i = GreenBookItem()
+        items=[]
+
         # url=response.url
         companys = response.css('div.companyInformation')
         for c in companys:
+            i = GreenBookItem()
             i['name'] = c.css('a[itemprop="CompanyName"]::text').extract_first().strip()
+            items.append(i)
         # i['address']=response.xpath('//div[@class="lai"]/text()').extract()[0].split()[4]
         # i['tel']=response.xpath('//div[@class="lai"]/text()').extract()[0].split()[3]
         # i['mail']=u''.join(response.xpath('//div[@id="articleContent"]/descendant::text()').extract())
         # i['website']=''
-        
         self.logger.info('I am here!!!!!!!!!!!!!!')
-        return i
+        yield items
+
+        #TODO:
+        #怎么获取下一页呢？？
         
     def parse(self,response):
         #hxs = HtmlXPathSelector(response)
@@ -43,7 +48,7 @@ class GreenbookSpider(CrawlSpider):
         # pdb.set_trace()
         for url in urls:
             self.logger.info('search:'+url)
-            yield Request(url,callback=self.parse2)#headers={'User-Agent': "Mozilla/4.0 (compatible; MSIE 8.0; Windows NT 6.0; Trident/4.0)"},
+            yield Request(url,callback=self.parse2,dont_filter=True)#headers={'User-Agent': "Mozilla/4.0 (compatible; MSIE 8.0; Windows NT 6.0; Trident/4.0)"},
         
     def parse2(self, response):
         #hxs = HtmlXPathSelector(response)
@@ -54,4 +59,4 @@ class GreenbookSpider(CrawlSpider):
         # pdb.set_trace()
         for url in urls:
             self.logger.info('joinurl:'+url)
-            yield Request('http://www.thegreenbook.com'+url,callback=self.parse_item)#,headers={'User-Agent': "Mozilla/4.0 (compatible; MSIE 8.0; Windows NT 6.0; Trident/4.0)"}
+            yield Request('http://www.thegreenbook.com'+url,callback=self.parse_item,dont_filter=True)#,headers={'User-Agent': "Mozilla/4.0 (compatible; MSIE 8.0; Windows NT 6.0; Trident/4.0)"}
